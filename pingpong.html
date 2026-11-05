@@ -1,0 +1,870 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ping Pong Pro | Tailscale</title>
+
+<style>
+:root {
+  --fondo: #080e24;
+  --panel: #101a38;
+  --azul: #2878ff;
+  --rojo: #ff4569;
+  --texto: #f3f6ff;
+  --suave: #a9b8dc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(ellipse at top, #172656, var(--fondo) 70%);
+  color: var(--texto);
+  min-height: 100vh;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  padding: 20px 5%;
+  border-bottom: 1px solid #28375f;
+}
+
+.logo {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 900;
+}
+
+.logo span {
+  color: #32baff;
+}
+
+.estado {
+  color: #76f5ba;
+  font-size: 14px;
+}
+
+main {
+  width: min(1200px, 94%);
+  margin: 28px auto;
+}
+
+.intro {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.intro h1 {
+  font-size: clamp(27px, 5vw, 42px);
+  margin-bottom: 8px;
+}
+
+.intro p {
+  color: var(--suave);
+  line-height: 1.6;
+}
+
+.juego {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(230px, 0.85fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.panel {
+  background: rgba(16, 26, 56, .94);
+  border: 1px solid #293d70;
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.cancha {
+  position: relative;
+  overflow: hidden;
+  border: 3px solid var(--azul);
+  border-radius: 16px;
+  background: #101c4b;
+  box-shadow: 0 0 24px #1769ff22;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+}
+
+.marcador {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.puntos {
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.puntos.rojo {
+  color: var(--rojo);
+}
+
+.puntos.azul {
+  color: #4eabff;
+}
+
+.vs {
+  color: var(--suave);
+  font-weight: bold;
+}
+
+h2 {
+  font-size: 19px;
+  margin: 0 0 17px;
+}
+
+.fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  color: var(--suave);
+}
+
+.fila strong {
+  color: var(--texto);
+}
+
+.botones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+button, select {
+  border: 1px solid #354c80;
+  border-radius: 10px;
+  padding: 12px 10px;
+  color: white;
+  background: #1a2a53;
+  font-size: 14px;
+}
+
+button {
+  cursor: pointer;
+  transition: transform .15s, filter .15s;
+  touch-action: manipulation;
+}
+
+button:hover {
+  filter: brightness(1.2);
+}
+
+button:active {
+  transform: scale(.96);
+}
+
+button.principal {
+  background: linear-gradient(135deg, #2678ff, #5549ef);
+  border: none;
+}
+
+button.reiniciar {
+  background: #38213e;
+  border-color: #75405e;
+}
+
+select {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.controles-movil {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.control {
+  min-height: 65px;
+  font-size: 25px;
+  font-weight: bold;
+  background: #172b58;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.control span {
+  display: block;
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--suave);
+}
+
+.instrucciones {
+  color: var(--suave);
+  line-height: 1.8;
+  padding-left: 20px;
+}
+
+.estado-juego {
+  text-align: center;
+  min-height: 24px;
+  color: #83caff;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+footer {
+  border-top: 1px solid #28375f;
+  color: var(--suave);
+  text-align: center;
+  padding: 22px 12px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.usuario { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--suave); }
+.usuario img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--azul); object-fit: cover; }
+.usuario button { padding: 8px 12px; font-size: 13px; }
+.historial { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.historial li { display: flex; justify-content: space-between; gap: 10px; background: #0d1736; border: 1px solid #293d70; border-radius: 10px; padding: 9px 12px; font-size: 13px; color: var(--suave); }
+.historial li.gano strong { color: #76f5ba; }
+.historial li.perdio strong { color: var(--rojo); }
+
+@media (max-width: 760px) {
+  header {
+    padding: 17px 5%;
+  }
+
+  .juego {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  main {
+    margin: 20px auto;
+  }
+
+  .marcador {
+    gap: 17px;
+  }
+
+  .puntos {
+    font-size: 28px;
+  }
+
+  button {
+    padding: 13px 8px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">🏓 Ping <span>Pong PRO</span></div>
+  <div class="usuario">
+    <img id="avatar" alt="" hidden>
+    <span id="nombreUsuario">Conectando…</span>
+    <button id="btnSalir">Cerrar sesión</button>
+  </div>
+</header>
+
+<main>
+  <section class="intro">
+    <h1>¡Que comience el partido!</h1>
+    <p>Enfréntate a la computadora y demuestra tus reflejos.<br>
+    Juega desde tu PC o desde tu celular.</p>
+  </section>
+
+  <div class="juego">
+
+    <section>
+      <div class="panel">
+        <div class="marcador">
+          <div style="text-align:center">
+            <div style="color:var(--rojo);font-size:13px">JUGADOR</div>
+            <div class="puntos rojo" id="puntosJugador">0</div>
+          </div>
+
+          <div class="vs">VS</div>
+
+          <div style="text-align:center">
+            <div style="color:#4eabff;font-size:13px">CPU</div>
+            <div class="puntos azul" id="puntosCPU">0</div>
+          </div>
+        </div>
+
+        <div class="cancha">
+          <canvas id="cancha" width="900" height="520"
+            aria-label="Cancha de ping-pong"></canvas>
+        </div>
+
+        <div id="estadoJuego" class="estado-juego">
+          Pulsa Iniciar para jugar
+        </div>
+
+        <div class="botones">
+          <button id="btnIniciar" class="principal">▶ Iniciar partida</button>
+          <button id="btnPausa">⏸ Pausar</button>
+          <button id="btnReiniciar" class="reiniciar">↻ Reiniciar</button>
+          <button id="btnSonido">🔊 Sonido: activado</button>
+        </div>
+
+        <div class="controles-movil">
+          <button class="control" id="arriba">▲<span>Mover arriba</span></button>
+          <button class="control" id="abajo">▼<span>Mover abajo</span></button>
+        </div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="panel">
+        <h2>⚙️ Configuración</h2>
+
+        <div class="fila">
+          <label for="dificultad">Dificultad</label>
+        </div>
+        <select id="dificultad">
+          <option value="3">Fácil</option>
+          <option value="5" selected>Normal</option>
+          <option value="7">Difícil</option>
+        </select>
+
+        <div class="fila">
+          <label for="meta">Puntos para ganar</label>
+        </div>
+        <select id="meta">
+          <option value="3">3 puntos</option>
+          <option value="5" selected>5 puntos</option>
+          <option value="10">10 puntos</option>
+        </select>
+      </div>
+
+      <div class="panel">
+        <h2>🎮 Cómo jugar</h2>
+        <ul class="instrucciones">
+          <li>Presiona <strong>Iniciar partida</strong>.</li>
+          <li>Usa W y S para mover tu pala.</li>
+          <li>También puedes usar las flechas ↑ y ↓.</li>
+          <li>En el celular, utiliza los botones o toca la cancha para mover tu pala.</li>
+          <li>Devuelve la pelota para que no pase de tu lado.</li>
+          <li>¡El primero en alcanzar la meta gana!</li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <h2>📊 Estadísticas</h2>
+        <div class="fila">
+          <span>Intercambios</span>
+          <strong id="intercambios">0</strong>
+        </div>
+        <div class="fila">
+          <span>Velocidad</span>
+          <strong id="velocidad">Normal</strong>
+        </div>
+        <div class="fila">
+          <span>Ganador</span>
+          <strong id="ganador">—</strong>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>🏅 Mis partidas</h2>
+        <div class="fila">
+          <span>Victorias</span>
+          <strong id="victorias">0 de 0</strong>
+        </div>
+        <ul class="historial" id="historial">
+          <li>Cargando…</li>
+        </ul>
+      </div>
+    </aside>
+
+  </div>
+</main>
+
+<footer>
+  <div>Proyecto web desarrollado con HTML, CSS y JavaScript.</div>
+  <div>Pruebas de acceso remoto mediante Tailscale · Diseño adaptable a móviles.</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const SUPABASE_URL = "https://gtgdgodyncqzxfhlwmyi.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ttWEqjGWeG8J6L8c9oHqiw_UBrx726t";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const canvas = document.getElementById("cancha");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+const jugador = { x: 35, y: H / 2 - 55, w: 16, h: 110, color: "#ff4569" };
+const cpu = { x: W - 51, y: H / 2 - 55, w: 16, h: 110, color: "#2878ff" };
+
+const pelota = {
+  x: W / 2, y: H / 2,
+  r: 10, vx: 5, vy: 3
+};
+
+let puntosJ = 0;
+let puntosC = 0;
+let intercambios = 0;
+let jugando = false;
+let terminado = false;
+let sonido = true;
+let teclas = {};
+let velocidadBase = 5;
+let ultimoTiempo = 0;
+let audioContext = null;
+
+const $ = id => document.getElementById(id);
+
+function sonidoGolpe(frecuencia = 350) {
+  if (!sonido) return;
+
+  try {
+    audioContext ??= new (window.AudioContext || window.webkitAudioContext)();
+
+    if (audioContext.state === "suspended") audioContext.resume();
+
+    const oscilador = audioContext.createOscillator();
+    const volumen = audioContext.createGain();
+
+    oscilador.frequency.value = frecuencia;
+    volumen.gain.setValueAtTime(0.08, audioContext.currentTime);
+    volumen.gain.exponentialRampToValueAtTime(
+      0.001, audioContext.currentTime + 0.09
+    );
+
+    oscilador.connect(volumen);
+    volumen.connect(audioContext.destination);
+    oscilador.start();
+    oscilador.stop(audioContext.currentTime + 0.1);
+  } catch (error) {
+    // El juego sigue funcionando aunque el audio no esté disponible.
+  }
+}
+
+function actualizarMarcador() {
+  $("puntosJugador").textContent = puntosJ;
+  $("puntosCPU").textContent = puntosC;
+  $("intercambios").textContent = intercambios;
+
+  const velocidad = Math.hypot(pelota.vx, pelota.vy);
+  $("velocidad").textContent =
+    velocidad < 6 ? "Normal" : velocidad < 9 ? "Rápida" : "Muy rápida";
+}
+
+function reiniciarPelota(direccion = 1) {
+  pelota.x = W / 2;
+  pelota.y = H / 2;
+  pelota.vx = velocidadBase * direccion;
+  pelota.vy = (Math.random() - 0.5) * 5;
+}
+
+function reiniciarPartida() {
+  puntosJ = 0;
+  puntosC = 0;
+  intercambios = 0;
+  terminado = false;
+  jugando = false;
+
+  jugador.y = H / 2 - jugador.h / 2;
+  cpu.y = H / 2 - cpu.h / 2;
+
+  reiniciarPelota(Math.random() > 0.5 ? 1 : -1);
+
+  $("ganador").textContent = "—";
+  $("estadoJuego").textContent = "Pulsa Iniciar para jugar";
+  $("btnIniciar").textContent = "▶ Iniciar partida";
+
+  actualizarMarcador();
+}
+
+function terminarPartida(nombre) {
+  jugando = false;
+  terminado = true;
+  $("ganador").textContent = nombre;
+  $("estadoJuego").textContent = "🏆 ¡" + nombre + " gana la partida!";
+  $("btnIniciar").textContent = "▶ Nueva partida";
+  sonidoGolpe(650);
+  guardarPartida(nombre);
+}
+
+function anotar(quien) {
+  if (quien === "jugador") {
+    puntosJ++;
+    reiniciarPelota(1);
+    $("estadoJuego").textContent = "¡Punto para ti! Sigue así.";
+  } else {
+    puntosC++;
+    reiniciarPelota(-1);
+    $("estadoJuego").textContent = "Punto para la computadora. ¡A remontar!";
+  }
+
+  sonidoGolpe(quien === "jugador" ? 600 : 220);
+  actualizarMarcador();
+
+  const meta = Number($("meta").value);
+
+  if (puntosJ >= meta) terminarPartida("Jugador");
+  if (puntosC >= meta) terminarPartida("Computadora");
+}
+
+function rectangulo(x, y, w, h, color, radio = 8) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, radio);
+  ctx.fill();
+}
+
+function dibujar() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Fondo de la cancha.
+  ctx.fillStyle = "#101c4b";
+  ctx.fillRect(0, 0, W, H);
+
+  // Líneas centrales.
+  ctx.strokeStyle = "rgba(180,205,255,0.55)";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([13, 13]);
+  ctx.beginPath();
+  ctx.moveTo(W / 2, 0);
+  ctx.lineTo(W / 2, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Círculo central.
+  ctx.beginPath();
+  ctx.arc(W / 2, H / 2, 75, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(180,205,255,0.18)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Efecto luminoso de las palas.
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = jugador.color;
+  rectangulo(jugador.x, jugador.y, jugador.w, jugador.h, jugador.color, 9);
+
+  ctx.shadowColor = cpu.color;
+  rectangulo(cpu.x, cpu.y, cpu.w, cpu.h, cpu.color, 9);
+
+  // Pelota con brillo.
+  ctx.shadowColor = "#ffffff";
+  ctx.shadowBlur = 16;
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(pelota.x, pelota.y, pelota.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Mensaje cuando el juego está detenido.
+  if (!jugando) {
+    ctx.fillStyle = "rgba(5, 10, 30, 0.48)";
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 34px Arial";
+
+    const texto = terminado ? "¡Partida terminada!" :
+      puntosJ === 0 && puntosC === 0 ? "PING PONG PRO" : "PARTIDA EN PAUSA";
+
+    ctx.fillText(texto, W / 2, H / 2 - 8);
+
+    ctx.font = "18px Arial";
+    ctx.fillStyle = "#b8d1ff";
+    ctx.fillText(
+      terminado ? "Pulsa Nueva partida" : "Pulsa Iniciar para continuar",
+      W / 2, H / 2 + 30
+    );
+  }
+}
+
+function actualizar(dt) {
+  if (!jugando) return;
+
+  const factor = Math.min(dt / 16.67, 2);
+
+  // Movimiento del jugador con teclado.
+  const velocidadJugador = 7 * factor;
+
+  if (teclas["w"] || teclas["arrowup"]) jugador.y -= velocidadJugador;
+  if (teclas["s"] || teclas["arrowdown"]) jugador.y += velocidadJugador;
+
+  jugador.y = Math.max(0, Math.min(H - jugador.h, jugador.y));
+
+  // La CPU sigue la pelota, con una pequeña imprecisión.
+  const centroCPU = cpu.y + cpu.h / 2;
+  const objetivo = pelota.vx > 0 ? pelota.y : H / 2;
+  const velocidadCPU = Number($("dificultad").value) * factor;
+
+  if (centroCPU < objetivo - 12) cpu.y += velocidadCPU;
+  if (centroCPU > objetivo + 12) cpu.y -= velocidadCPU;
+
+  cpu.y = Math.max(0, Math.min(H - cpu.h, cpu.y));
+
+  pelota.x += pelota.vx * factor;
+  pelota.y += pelota.vy * factor;
+
+  // Rebote en los bordes superior e inferior.
+  if (pelota.y - pelota.r <= 0 || pelota.y + pelota.r >= H) {
+    pelota.vy *= -1;
+    pelota.y = Math.max(pelota.r, Math.min(H - pelota.r, pelota.y));
+    sonidoGolpe(300);
+  }
+
+  // Colisión con la pala del jugador.
+  if (
+    pelota.vx < 0 &&
+    pelota.x - pelota.r <= jugador.x + jugador.w &&
+    pelota.x + pelota.r >= jugador.x &&
+    pelota.y >= jugador.y &&
+    pelota.y <= jugador.y + jugador.h
+  ) {
+    pelota.x = jugador.x + jugador.w + pelota.r;
+    pelota.vx = Math.abs(pelota.vx) * 1.04;
+    pelota.vy = ((pelota.y - (jugador.y + jugador.h / 2)) /
+      (jugador.h / 2)) * 5;
+
+    intercambios++;
+    sonidoGolpe(430);
+  }
+
+  // Colisión con la pala de la CPU.
+  if (
+    pelota.vx > 0 &&
+    pelota.x + pelota.r >= cpu.x &&
+    pelota.x - pelota.r <= cpu.x + cpu.w &&
+    pelota.y >= cpu.y &&
+    pelota.y <= cpu.y + cpu.h
+  ) {
+    pelota.x = cpu.x - pelota.r;
+    pelota.vx = -Math.abs(pelota.vx) * 1.04;
+    pelota.vy = ((pelota.y - (cpu.y + cpu.h / 2)) /
+      (cpu.h / 2)) * 5;
+
+    intercambios++;
+    sonidoGolpe(430);
+  }
+
+  // Limitar la velocidad para mantener el juego controlable.
+  const maxVelocidad = 13;
+  pelota.vx = Math.max(-maxVelocidad, Math.min(maxVelocidad, pelota.vx));
+  pelota.vy = Math.max(-maxVelocidad, Math.min(maxVelocidad, pelota.vy));
+
+  // Punto cuando la pelota sale de la cancha.
+  if (pelota.x < -pelota.r) anotar("computadora");
+  if (pelota.x > W + pelota.r) anotar("jugador");
+
+  actualizarMarcador();
+}
+
+function bucle(tiempo) {
+  const dt = ultimoTiempo ? tiempo - ultimoTiempo : 16.67;
+  ultimoTiempo = tiempo;
+
+  actualizar(dt);
+  dibujar();
+
+  requestAnimationFrame(bucle);
+}
+
+function iniciar() {
+  if (terminado) reiniciarPartida();
+
+  jugando = true;
+  $("estadoJuego").textContent = "¡En juego! Devuelve la pelota.";
+  $("btnIniciar").textContent = "▶ Continuar";
+}
+
+$("btnIniciar").addEventListener("click", iniciar);
+
+$("btnPausa").addEventListener("click", () => {
+  if (terminado) return;
+
+  jugando = !jugando;
+  $("estadoJuego").textContent = jugando ?
+    "¡En juego! Devuelve la pelota." : "Partida en pausa";
+  $("btnIniciar").textContent = jugando ? "▶ Continuar" : "▶ Continuar";
+});
+
+$("btnReiniciar").addEventListener("click", reiniciarPartida);
+
+$("btnSonido").addEventListener("click", () => {
+  sonido = !sonido;
+  $("btnSonido").textContent = sonido ?
+    "🔊 Sonido: activado" : "🔇 Sonido: desactivado";
+});
+
+$("dificultad").addEventListener("change", () => {
+  $("estadoJuego").textContent = "Dificultad actualizada";
+});
+
+$("meta").addEventListener("change", () => {
+  reiniciarPartida();
+  $("estadoJuego").textContent = "Meta actualizada. ¡Nueva partida!";
+});
+
+// Teclado: W/S o flechas.
+window.addEventListener("keydown", e => {
+  const tecla = e.key.toLowerCase();
+
+  if (["arrowup", "arrowdown", " "].includes(tecla)) {
+    e.preventDefault();
+  }
+
+  teclas[tecla] = true;
+
+  if (tecla === " " && !e.repeat) {
+    if (jugando) $("btnPausa").click();
+    else iniciar();
+  }
+});
+
+window.addEventListener("keyup", e => {
+  teclas[e.key.toLowerCase()] = false;
+});
+
+// Botones táctiles: mantener pulsado para mover la pala.
+function configurarControl(id, tecla) {
+  const boton = $(id);
+
+  const activar = e => {
+    e.preventDefault();
+    teclas[tecla] = true;
+  };
+
+  const desactivar = e => {
+    e.preventDefault();
+    teclas[tecla] = false;
+  };
+
+  boton.addEventListener("pointerdown", activar);
+  boton.addEventListener("pointerup", desactivar);
+  boton.addEventListener("pointercancel", desactivar);
+  boton.addEventListener("lostpointercapture", desactivar);
+  boton.addEventListener("pointerleave", desactivar);
+}
+
+configurarControl("arriba", "w");
+configurarControl("abajo", "s");
+
+// Tocar o arrastrar sobre la cancha mueve la pala del jugador.
+function moverConToque(e) {
+  const rect = canvas.getBoundingClientRect();
+  const escalaY = H / rect.height;
+  const y = (e.clientY - rect.top) * escalaY;
+
+  jugador.y = Math.max(0, Math.min(H - jugador.h, y - jugador.h / 2));
+}
+
+canvas.addEventListener("pointerdown", e => {
+  if (e.pointerType !== "mouse") {
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    moverConToque(e);
+  }
+});
+
+canvas.addEventListener("pointermove", e => {
+  if (e.pointerType !== "mouse" && canvas.hasPointerCapture(e.pointerId)) {
+    moverConToque(e);
+  }
+});
+
+// ---------- Supabase: sesión y partidas ----------
+async function guardarPartida(nombreGanador) {
+  const { error } = await sb.from("partidas").insert({
+    puntos_jugador: puntosJ,
+    puntos_cpu: puntosC,
+    intercambios,
+    dificultad: $("dificultad").selectedOptions[0].text,
+    ganador: nombreGanador
+  });
+  $("estadoJuego").textContent += error
+    ? " No se pudo guardar la partida."
+    : " Partida guardada.";
+  if (error) console.error(error);
+  else cargarHistorial();
+}
+
+async function cargarHistorial() {
+  const lista = $("historial");
+  const { data, error } = await sb.from("partidas")
+    .select("puntos_jugador, puntos_cpu, ganador, created_at")
+    .order("created_at", { ascending: false }).limit(100);
+  lista.textContent = "";
+  if (error || !data) {
+    const li = document.createElement("li");
+    li.textContent = "No pudimos cargar tu historial.";
+    lista.appendChild(li);
+    return;
+  }
+  const victorias = data.filter(x => x.ganador === "Jugador").length;
+  $("victorias").textContent = victorias + " de " + data.length;
+  if (!data.length) {
+    const li = document.createElement("li");
+    li.textContent = "Aún no has terminado una partida.";
+    lista.appendChild(li);
+    return;
+  }
+  data.slice(0, 5).forEach(x => {
+    const gano = x.ganador === "Jugador";
+    const li = document.createElement("li");
+    li.className = gano ? "gano" : "perdio";
+    const a = document.createElement("strong");
+    a.textContent = (gano ? "Ganaste " : "Perdiste ") + x.puntos_jugador + " - " + x.puntos_cpu;
+    const b = document.createElement("span");
+    b.textContent = new Date(x.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+    li.append(a, b);
+    lista.appendChild(li);
+  });
+}
+
+async function iniciarSesionJuego() {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) { location.replace("login.html"); return; }
+  const m = data.session.user.user_metadata || {};
+  $("nombreUsuario").textContent = m.user_name || m.full_name || m.name || data.session.user.email;
+  if (typeof m.avatar_url === "string" && m.avatar_url.startsWith("https://")) {
+    $("avatar").src = m.avatar_url;
+    $("avatar").hidden = false;
+  }
+  cargarHistorial();
+}
+
+$("btnSalir").addEventListener("click", async () => {
+  await sb.auth.signOut();
+  location.href = "login.html";
+});
+
+iniciarSesionJuego();
+reiniciarPartida();
+requestAnimationFrame(bucle);
+</script>
+
+</body>
+</html>
