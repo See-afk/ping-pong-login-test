@@ -117,6 +117,23 @@
     .message.error { color: var(--danger); }
     .message.success { color: var(--success); }
     .security-note { border-top: 1px solid var(--border); margin-top: 22px; padding-top: 17px; color: #8498bd; font-size: 11px; line-height: 1.6; text-align: center; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #6f83ad; font-size: 12px; }
+    .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .github {
+      display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 49px;
+      border-radius: 11px; border: 1px solid #3a4f80; background: #f4f7ff; color: #0b1226; font-weight: 800;
+      transition: transform .15s, filter .15s;
+    }
+    .github:hover { filter: brightness(.93); }
+    .github:active { transform: scale(.99); }
+    .github svg { width: 20px; height: 20px; fill: currentColor; }
+    .submit:disabled, .github:disabled { opacity: .6; cursor: wait; }
+    .avatar { width: 84px; height: 84px; border-radius: 50%; border: 3px solid var(--blue); object-fit: cover; margin-bottom: 12px; box-shadow: 0 0 24px #347cff55; }
+    .history { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; text-align: left; }
+    .history li { background: #0e1b3a; border: 1px solid var(--border); border-radius: 10px; padding: 10px 13px; font-size: 13px; color: #dbe6ff; display: flex; justify-content: space-between; gap: 10px; }
+    .history li.win span:first-child { color: var(--success); }
+    .history li.lose span:first-child { color: var(--danger); }
+    .history-title { margin: 22px 0 0; font-size: 13px; color: var(--muted); font-weight: 700; text-align: left; }
     .hidden { display: none !important; }
     .dashboard { text-align: center; }
     .dashboard .trophy { font-size: 50px; margin-bottom: 10px; }
@@ -169,8 +186,14 @@
       <div id="authView">
         <div class="card-heading">
           <h2 id="formTitle">¡Qué bueno verte!</h2>
-          <p id="formSubtitle">Ingresa tus datos para entrar a la arena.</p>
+          <p id="formSubtitle">Entra con GitHub o con tu correo.</p>
         </div>
+
+        <button class="github" id="githubButton" type="button">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          Continuar con GitHub
+        </button>
+        <div class="divider">o con tu correo</div>
 
         <div class="tabs" role="tablist" aria-label="Tipo de formulario">
           <button type="button" class="tab active" id="loginTab" role="tab" aria-selected="true">Iniciar sesión</button>
@@ -218,33 +241,35 @@
         </form>
 
         <div class="security-note">
-          Demostración académica de front-end. Este formulario no envía tus datos a ningún servidor.
+          Tu sesión y tus partidas se guardan con Supabase Auth. Tu contraseña nunca se almacena en esta página.
         </div>
       </div>
 
       <div id="dashboardView" class="dashboard hidden">
-        <div class="trophy">🏆</div>
+        <img id="avatar" class="avatar hidden" alt="Tu foto de perfil"><div class="trophy" id="trophy">🏆</div>
         <h2>¡Bienvenido a la arena!</h2>
-        <p>Sesión de demostración iniciada para<br><strong class="account-name" id="welcomeName"></strong></p>
-        <p>Tu interfaz está lista. El siguiente paso sería conectar el proyecto a un sistema de autenticación real.</p>
+        <p>Sesión iniciada como<br><strong class="account-name" id="welcomeName"></strong></p>
+        <p class="history-title">Tus últimas partidas</p>
+        <ul class="history" id="historyList"></ul>
         <div class="dashboard-actions">
           <button class="submit" id="playButton" type="button">🏓 Ir al juego</button>
-          <button class="secondary" id="logoutButton" type="button">Cerrar sesión de demostración</button>
+          <button class="secondary" id="logoutButton" type="button">Cerrar sesión</button>
         </div>
-        <div class="security-note">La sesión solo existe en esta página y no verifica una identidad real.</div>
+        <div class="security-note">Sesión verificada por Supabase.</div>
       </div>
     </section>
   </main>
 
-  <footer>
-  </footer>
+  <footer>Ping Pong Arena · Hecho con HTML, CSS, JavaScript y Supabase</footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script>
-    // DEMO EDUCATIVA: las cuentas se guardan solo en la memoria de esta pestaña.
-    // No uses contraseñas reales. Para producción, utiliza un backend seguro.
+    // La llave "publishable" es pública por diseño; la seguridad la dan las políticas RLS.
+    const SUPABASE_URL = "https://gtgdgodyncqzxfhlwmyi.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_ttWEqjGWeG8J6L8c9oHqiw_UBrx726t";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const $ = (id) => document.getElementById(id);
     let modo = "login";
-    const cuentasDemo = new Map();
 
     const authForm = $("authForm");
     const emailInput = $("email");
@@ -302,7 +327,74 @@
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
     }
 
-    authForm.addEventListener("submit", (evento) => {
+    const paginaLogin = location.origin + location.pathname;
+
+    function nombreDe(user) {
+      const m = user.user_metadata || {};
+      return m.user_name || m.full_name || m.name || user.email;
+    }
+
+    function ocupado(si) {
+      $("submitButton").disabled = si;
+      $("githubButton").disabled = si;
+    }
+
+    async function cargarHistorial() {
+      const lista = $("historyList");
+      const { data, error } = await sb.from("partidas")
+        .select("puntos_jugador, puntos_cpu, ganador, created_at")
+        .order("created_at", { ascending: false }).limit(5);
+      lista.textContent = "";
+      if (error || !data || !data.length) {
+        const li = document.createElement("li");
+        li.textContent = error ? "No pudimos cargar tu historial." : "Aún no has jugado. Pulsa Ir al juego para empezar.";
+        lista.appendChild(li);
+        return;
+      }
+      data.forEach((p) => {
+        const gano = p.ganador === "Jugador";
+        const li = document.createElement("li");
+        li.className = gano ? "win" : "lose";
+        const a = document.createElement("span");
+        a.textContent = (gano ? "Ganaste " : "Perdiste ") + p.puntos_jugador + " - " + p.puntos_cpu;
+        const b = document.createElement("span");
+        b.textContent = new Date(p.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+        li.append(a, b);
+        lista.appendChild(li);
+      });
+    }
+
+    function mostrarSesion(session) {
+      const hay = !!session;
+      $("authView").classList.toggle("hidden", hay);
+      $("dashboardView").classList.toggle("hidden", !hay);
+      if (!hay) return;
+      const user = session.user;
+      $("welcomeName").textContent = nombreDe(user);
+      const foto = user.user_metadata && user.user_metadata.avatar_url;
+      const ok = typeof foto === "string" && foto.startsWith("https://");
+      $("avatar").classList.toggle("hidden", !ok);
+      $("trophy").classList.toggle("hidden", ok);
+      if (ok) $("avatar").src = foto;
+      // Evita llamar a Supabase dentro del callback de auth (puede bloquearse).
+      setTimeout(cargarHistorial, 0);
+    }
+
+    sb.auth.onAuthStateChange((_evento, session) => mostrarSesion(session));
+
+    $("githubButton").addEventListener("click", async () => {
+      ocupado(true);
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: "github",
+        options: { redirectTo: paginaLogin }
+      });
+      if (error) {
+        ocupado(false);
+        mostrarMensaje("No se pudo abrir GitHub: " + error.message, "error");
+      }
+    });
+
+    authForm.addEventListener("submit", async (evento) => {
       evento.preventDefault();
       mostrarMensaje("");
 
@@ -315,7 +407,6 @@
         emailInput.focus();
         return;
       }
-
       if (password.length < 8) {
         mostrarMensaje("La contraseña debe tener al menos 8 caracteres.", "error");
         passwordInput.focus();
@@ -323,61 +414,48 @@
       }
 
       if (modo === "register") {
-        const confirmacion = $("confirmPassword").value;
-
         if (nombre.length < 2) {
           mostrarMensaje("Escribe tu nombre (al menos 2 caracteres).", "error");
           $("fullName").focus();
           return;
         }
-
-        if (password !== confirmacion) {
+        if (password !== $("confirmPassword").value) {
           mostrarMensaje("Las contraseñas no coinciden. Revísalas e inténtalo otra vez.", "error");
           $("confirmPassword").focus();
           return;
         }
-
-        if (cuentasDemo.has(correo)) {
-          mostrarMensaje("Ya existe una cuenta de demostración con ese correo.", "error");
-          return;
+        ocupado(true);
+        const { data, error } = await sb.auth.signUp({
+          email: correo, password,
+          options: { data: { full_name: nombre }, emailRedirectTo: paginaLogin }
+        });
+        ocupado(false);
+        if (error) { mostrarMensaje(error.message, "error"); return; }
+        if (!data.session) {
+          cambiarModo("login");
+          mostrarMensaje("Cuenta creada. Revisa tu correo y confirma tu cuenta para entrar.", "success");
         }
-
-        cuentasDemo.set(correo, { nombre, password });
-        mostrarMensaje("¡Cuenta de demostración creada! Ya puedes iniciar sesión.", "success");
-        cambiarModo("login");
-        emailInput.value = correo;
-        passwordInput.value = "";
-        $("confirmPassword").value = "";
-        passwordInput.focus();
         return;
       }
 
-      const cuenta = cuentasDemo.get(correo);
-      if (!cuenta || cuenta.password !== password) {
-        mostrarMensaje("No encontramos esa cuenta en esta demo. Crea una cuenta primero.", "error");
-        return;
-      }
-
-      $("authView").classList.add("hidden");
-      $("dashboardView").classList.remove("hidden");
-      $("welcomeName").textContent = cuenta.nombre || correo;
+      ocupado(true);
+      const { error } = await sb.auth.signInWithPassword({ email: correo, password });
+      ocupado(false);
+      if (error) mostrarMensaje("Correo o contraseña incorrectos, o la cuenta aún no está confirmada.", "error");
     });
 
     $("forgotButton").addEventListener("click", () => {
-      mostrarMensaje("Esta demo no envía correos. La recuperación real requiere un servicio de autenticación.", "error");
+      mostrarMensaje("Por ahora entra con GitHub o crea una cuenta nueva.", "error");
     });
 
-    $("logoutButton").addEventListener("click", () => {
-      $("dashboardView").classList.add("hidden");
-      $("authView").classList.remove("hidden");
+    $("logoutButton").addEventListener("click", async () => {
+      await sb.auth.signOut();
       authForm.reset();
       cambiarModo("login");
-      mostrarMensaje("Cerraste la sesión de demostración.", "success");
+      mostrarMensaje("Cerraste sesión.", "success");
     });
 
-    $("playButton").addEventListener("click", () => {
-      mostrarMensaje("¡Perfecto! Conecta aquí tu página del juego de ping-pong.", "success");
-    });
+    $("playButton").addEventListener("click", () => { location.href = "pingpong.html"; });
   </script>
 </body>
 </html>
